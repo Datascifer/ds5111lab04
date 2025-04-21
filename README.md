@@ -1,123 +1,163 @@
-# ds5111lab04
+# Setting Up a Linter and Tests for Your Code
 
-# Chrome Headless Browser and Python Environment Setup
+This lab sets up `pylint` for code linting and `pytest` for testing. You'll create makefile jobs to automate both. The goal is clean, tested code — with a linter score as close to 10/10 as possible.
 
-This repository sets up a Python environment with Google Chrome in headless mode, useful for web scraping and automation. Designed for reproducibility on a fresh VM (e.g., AWS EC2).
+---
 
-## Purpose
+## 1. Install `pylint`
 
-Automate setup for a headless browser data collection project. Output is a CSV file (`ygainers.csv`) scraped from the web.
+1. Add `pylint` to `requirements.txt` (if it's not already there):
 
-## Requirements
-
-- Ubuntu 20.04+ (tested on AWS EC2)
-- Python 3.12
-- Git with SSH access
-- Internet access
-
-## What’s Included
-
-- `init.sh`: Installs base tools (`make`, `python3.12-venv`, `tree`)
-- `install_chrome.sh`: Installs Google Chrome in headless mode
-- `Makefile`: Automates environment setup and test runs
-- `requirements.txt`: Python dependencies (`pandas`, `lxml`)
-- `scrape_gainers.py`: Sample script using headless Chrome
-- `ygainers.csv`: Sample output
-
-## 1. VM Setup
-
-### 1.1 Update and Install Base Packages
-
-Manually run:
-
-```bash
-sudo apt update
+```
+pandas
+lxml
+pylint
 ```
 
-Then run:
-
-```bash
-./init.sh
-```
-
-This installs:
-
-- `make`
-- `python3.12-venv`
-- `tree`
-
-### 1.2 Git + SSH Setup
-
-```bash
-ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_rsa
-cat ~/.ssh/id_rsa.pub
-```
-
-Add the key to your GitHub SSH settings.
-
-Clone the repo:
-
-```bash
-git clone git@github.com:your-username/your-repo.git
-cd your-repo
-```
-
-## 2. Project Setup
-
-### 2.1 Install Chrome
-
-```bash
-./scripts/install_chrome.sh
-```
-
-Test:
-
-```bash
-google-chrome --headless --disable-gpu --dump-dom https://example.com
-```
-
-### 2.2 Set Up Python Environment
+2. Run:
 
 ```bash
 make update
 ```
 
-Installs dependencies into `env/`.
-
-### 2.3 Run a Sample Job
+3. Activate your virtual environment:
 
 ```bash
-make ygainers.csv
+source env/bin/activate
 ```
 
-Creates `sample_data/ygainers.csv`.
-
-## Example Structure
+4. Confirm `pylint` is available:
 
 ```bash
-.
-├── init.sh
-├── Makefile
-├── README.md
-├── requirements.txt
-├── sample_data/
-│   └── ygainers.csv
-└── scripts/
-    ├── install_chrome.sh
-    ├── scrape_gainers.py
-    └── setup_git.sh
+pylint --version
 ```
+
+---
+
+## 2. Set Up `pylint` Config
+
+1. Generate a config file:
+
+```bash
+pylint --generate-rcfile >> pylintrc
+```
+
+2. Test it's working:
+
+```bash
+pylint path/to/your_script.py
+```
+
+You should see style warnings (e.g. indentation, naming, docstrings).
+
+3. To confirm it's reading your config, search in `pylintrc` for:
+
+```
+indent-string='    '
+```
+
+Change it to two spaces (`'  '`), re-run `pylint`, and observe the output. Change it back to four spaces afterward.
+
+---
+
+## 3. Add a `lint` Makefile Job
+
+In your `Makefile`, add:
+
+```make
+lint:
+	./env/bin/pylint your_module.py
+```
+
+Run it with:
+
+```bash
+make lint
+```
+
+---
+
+## 4. Set Up `pytest`
+
+1. Add `pytest` to `requirements.txt`:
+
+```
+pytest
+```
+
+2. Update environment:
+
+```bash
+make update
+```
+
+3. Create a `tests/` directory and a test file:
+
+```bash
+mkdir tests
+touch tests/test_your_module.py
+```
+
+4. In `test_your_module.py`, add:
+
+```python
+import sys
+sys.path.append('.')
+import your_module  # replace with actual module
+
+def test_example():
+    assert 2 + 2 == 4  # Replace with a real test
+```
+
+5. Run tests:
+
+```bash
+pytest -vv tests
+```
+
+---
+
+## 5. Add `test` Makefile Job
+
+In `Makefile`, add:
+
+```make
+test: lint
+	./env/bin/pytest -vv tests
+```
+
+This runs linting first, then tests.
+
+---
+
+## 6. Refactor, Fix, Commit
+
+Repeat this cycle:
+
+1. Run:
+
+```bash
+make test
+```
+
+2. Fix one issue (either linter or test)
+3. Commit your work when you reach a stable state
+4. Repeat until:
+
+- All tests pass
+- `pylint` reports `10.00/10`
+
+---
 
 ## Notes
 
-- `env/` is ignored from version control
-- All scripts should be executable (`chmod +x filename`)
-- Output is saved to `sample_data/`
+- Only `test_` functions will run under `pytest`
+- `pylint` evaluates naming, structure, spacing, comments, and more
+- Use `.gitignore` to exclude `env/`, `__pycache__/`, and `.pytest_cache/`
 
-## Troubleshooting
+---
 
-- **Chrome not found:** Re-run `install_chrome.sh`
-- **Python venv error:** Confirm Python 3.12 is installed
-- **Git SSH error:** Check if your key is added to GitHub
+## References
+
+- Pylint: https://pylint.readthedocs.io/en/latest/user_guide/
+- Pytest: https://docs.pytest.org/en/stable/  
