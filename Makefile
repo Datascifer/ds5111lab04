@@ -31,3 +31,10 @@ test: ygainers.csv wjsgainers.csv
 clean:
 	rm -f *.html *.csv
 	rm -rf env/
+
+lint:
+	./env/bin/pylint scripts/test_pylint.py
+
+
+test: lint
+	./env/bin/pytest -vv tests
